@@ -1,0 +1,47 @@
+[project]
+name = "venetoclax-project"
+version = "0.1.0"
+description = ""
+authors = [
+    {name = "Braeden Walker",email = "bwalk063@uottawa.ca"}
+]
+readme = "README.md"
+requires-python = ">=3.14"
+dependencies = [
+    "ipykernel (>=7.3.0,<8.0.0)",
+    "pandas (>=3.0.5,<4.0.0)",
+    "matplotlib (>=3.11.1,<4.0.0)",
+    "anndata (>=0.13.3.post0,<0.14.0)",
+    "seaborn (>=0.13.2,<0.14.0)",
+    "scikit-learn (>=1.9.0,<2.0.0)",
+    "numpy (>=2.5.2,<3.0.0)",
+    "gseapy (>=1.3.1,<2.0.0)",
+    "lxml (>=6.1.2,<7.0.0)",
+    "mygene (>=3.2.2,<4.0.0)",
+    "inmoose (>=0.9.1,<0.10.0)",
+    "pydeseq2 (>=0.5.4,<0.6.0)",
+    "shap (>=0.52.0,<0.53.0)",
+    "openpyxl (>=3.1.5,<4.0.0)",
+    "scikit-survival (>=0.28.0,<0.29.0)",
+    "kaplanmeier (>=0.2.0,<0.3.0)",
+    "pylimma (>=0.1.0,<0.2.0)",
+    "decoupler[full] (>=2.2.0,<3.0.0)",
+    "umap-learn (>=0.5.12,<0.6.0)",
+    "matplotlib-venn (>=1.1.2,<2.0.0)",
+    "upsetplot (>=0.9.0,<0.10.0)",
+    "xgboost (>=3.4.1,<4.0.0)",
+    "starbars (>=3.1.1,<4.0.0)",
+    "nbconvert (>=7.17.1,<8.0.0)",
+]
+
+[tool.poetry]
+packages = [ {include = "datasets", from = "src"} ]
+
+[build-system]
+requires = ["poetry-core>=2.0.0,<3.0.0"]
+build-backend = "poetry.core.masonry.api"
+
+[dependency-groups]
+dev = [
+    "ipykernel (>=7.4.0,<8.0.0)"
+]
