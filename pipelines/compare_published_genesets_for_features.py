@@ -6,15 +6,17 @@ from sklearn.naive_bayes import GaussianNB
 from sklearn.ensemble import RandomForestClassifier, HistGradientBoostingClassifier 
 from sklearn.svm import LinearSVC, SVC
 from sklearn.model_selection import StratifiedKFold, cross_val_score
+from sklearn.pipeline import make_pipeline
+from sklearn.preprocessing import StandardScaler
+
 from utils.labelling import binarize_labels
 
 from gseapy import read_gmt
 import os
 
+
 gmt_dir = '../data/GMT/'
 random_state=4
-
-mf_ad = harmonize()['Moffitt']
 
 ml_models = {'RidgeClassifier': RidgeClassifier(random_state=random_state),
              'LogisticRegression': LogisticRegression(random_state=random_state),
@@ -28,64 +30,83 @@ ml_models = {'RidgeClassifier': RidgeClassifier(random_state=random_state),
              }
 
 feature_sets = {
-        'all': list(mf_ad.to_df().columns),
+        #'all': list(mf_ad.to_df().columns),
         'Gupta_six_gene_signature': ['VPREB3', 'CCR7', 'SORL1', 'TRABD2A', 'EFEMP1', 'TDO2'], 
+        'BCL2_family_ratios': ['BCL2/MCL1', "BCL2/BCL2L1"],
+        'Leblay_integrated_single_cell': ['RUNX1', 'BCL2/MCL1', "BCL2/BCL2L1", "IRF1", "IRF4", "PAX5", "ID3", "PRDM1", "TCF4", "XBP1", "CD79A", "MS4A1", "ERN1", "RUNX2", "AP1", "NOXA", "BBC3"],
+        
+        # combinations
+        'BCL2_family_ratios + Gupta_six_gene_signature': ['VPREB3', 'CCR7', 'SORL1', 'TRABD2A', 'EFEMP1', 'TDO2', 'BCL2/MCL1', "BCL2/BCL2L1"],
+
+        # novel data-driven (i.e. t11;14 degs from commpass)
+        't11_14_degs': [],
         }
 
-all_published = []
+with open("../outputs/t11_14_degs.txt", "r") as file:
+    feature_sets['t11_14_degs'] = file.read().split(',')
+
 for file_name in os.listdir(gmt_dir):
-    #if 'gmt' in file_name and "ZHAN" in file_name and "TARTE" in file_name and "B_CELLl" in file_name:
     if 'gmt' in file_name:
         if "ZHAN" in file_name or "TART" in file_name or "HAY" in file_name or "SHAF" in file_name or "BCL" in file_name or 'chr' in file_name: 
-            gmt = read_gmt(gmt_dir + file_name)
-
-            print(gmt.keys())
-            
+            gmt = read_gmt(gmt_dir + file_name)            
             feature_sets[file_name] = list(gmt.values())[0]
-            all_published +=list(gmt.values())[0]
-
-feature_sets['all_published'] = list(set(all_published))
 
 
-mf_ad.obs['venetoclax_response'] = binarize_labels(mf_ad.obs['ABT-199'])
-mf_ad = mf_ad[mf_ad.obs['venetoclax_response'] != -1 ]
+def main():
+
+    mf_ad = harmonize()['Moffitt']
+    feature_sets['all'] = list(mf_ad.var_names)
+    mf_ad.obs['venetoclax_response'] = binarize_labels(mf_ad.obs['ABT-199'])
+    mf_ad = mf_ad[mf_ad.obs['venetoclax_response'] != -1 ]
 
 
-results = {} # rows = feature set name, cols = model name
-results_with_variability = {}
+    results = {} # rows = feature set name, cols = model name
+    results_with_variability = {}
 
-for feature_set_name in feature_sets.keys():
-    
+
     X = mf_ad.to_df()
     y = mf_ad.obs['venetoclax_response']
+
+    X['BCL2/MCL1'] = X['BCL2'] / X['MCL1']
+
+    X['BCL2/BCL2L1'] = X['BCL2'] / X['BCL2L1']
+
+
+    for feature_set_name in feature_sets.keys():
+        
+             
+        feature_set = list( set(feature_sets[feature_set_name]) & set(X.columns) )
+        print(f'Using: {feature_set_name}')
+        print(f'n features: {len(feature_set)}')
+
          
-    feature_set = list( set(feature_sets[feature_set_name]) & set(mf_ad.to_df().columns) )
-    print(f'Using: {feature_set_name}')
-    print(f'n features: {len(feature_set)}')
+        X_selected = X[feature_set]
 
-     
-    X = X[feature_set]
+        results[feature_set_name ] = []
+        results_with_variability[ feature_set_name ] = []
 
-    results[feature_set_name ] = []
-    results_with_variability[ feature_set_name ] = []
+        for model_name in ml_models.keys():
+            
+            model = ml_models[model_name]
 
-    for model_name in ml_models.keys():
+            pipeline = make_pipeline(StandardScaler(),model)
 
-        model = ml_models[model_name]
-        cv = StratifiedKFold(5, shuffle=True, random_state=random_state)
-        cv_score  = cross_val_score(model, X, y, cv=cv, scoring='roc_auc')
-        results[ feature_set_name ].append(cv_score.mean())
+            cv = StratifiedKFold(5, shuffle=True, random_state=random_state)
+            cv_score  = cross_val_score(pipeline, X_selected, y, cv=cv, scoring='roc_auc')
+            
+            results[ feature_set_name ].append(cv_score.mean())
 
-        results_with_variability[ feature_set_name ].append(f'{cv_score.mean()} +/- {cv_score.std()}')
-
-
-print('\n')
-results_df = pd.DataFrame(results, index=list(ml_models.keys())) 
-results_df.to_csv("../outputs/comparing_published_genesets.csv")
+            results_with_variability[ feature_set_name ].append(f'{cv_score.mean():.5f} +/- {cv_score.std():.5f}')
 
 
-results_with_variability_df = pd.DataFrame(results_with_variability, index=list(ml_models.keys())) 
-results_with_variability_df.to_csv("../outputs/comparing_published_genesets_with_variability.csv")
-print(results_df)
+    print('\n')
+    results_df = pd.DataFrame(results, index=list(ml_models.keys())) 
+    results_df.to_csv("../outputs/comparing_published_genesets.csv")
 
 
+    results_with_variability_df = pd.DataFrame(results_with_variability, index=list(ml_models.keys())) 
+    results_with_variability_df.to_csv("../outputs/comparing_published_genesets_with_variability.csv")
+    print(results_df)
+
+if __name__ == "__main__":
+    main()
