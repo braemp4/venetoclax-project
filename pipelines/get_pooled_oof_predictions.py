@@ -155,9 +155,9 @@ def cross_val_classification(X,y_ad, model,n_splits=5, random_state=4, verbose=T
     plt.yticks(np.arange(len(fold_metrics.keys())) + 1, list(fold_metrics.keys()))
     plt.xticks([0, 0.1 ,0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0])
     plt.xlabel('Score')
-    plt.title("Mean fold metrics")
+    plt.title("Top model + feature-set combination")
     plt.tight_layout()
-    plt.savefig('metric_uncertainty_example.png')
+    plt.savefig('top-model-feature-set-combination.png')
 
     return results, cv_metrics
 
