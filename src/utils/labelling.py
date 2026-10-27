@@ -18,8 +18,8 @@ def binarize_labels(y, method="gmm", random_state=4):
         y = gmm.predict(y)
     elif method == 'tertiles':
 
-        first_tertile = np.quantile(y, .25)
-        third_tertile = np.quantile(y, .75) 
+        first_tertile = np.quantile(y, .33)
+        third_tertile = np.quantile(y, .66) 
  
         y = [1 if v < first_tertile else 0 if v > third_tertile else -1 for v in y]
     return y

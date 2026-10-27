@@ -2,6 +2,7 @@ import pandas as pd
 import anndata as ad 
 import numpy as np 
 from pathlib import Path
+import os
 import mygene
 
 def load_moffitt_ad():
@@ -14,8 +15,10 @@ def load_moffitt_ad():
 
     This function will search for ensembl ids for moffitt if the file for them is not found
     '''
-
+    
     moffitt_path = Path(__file__).resolve().parents[2] / "data" / "Moffitt" #2 means we go 2 levels up from the current directory level. Equivalent to "../../"
+
+    ex_vivo_dir = Path(__file__).resolve().parents[2] / 'data' / "Moffitt" / "ExVivo_Drug_Response"/ "ABT-199"
 
     anndata_path = Path(moffitt_path / "AnnData" / "moffitt_annotated.h5ad")
     
@@ -133,6 +136,100 @@ def load_moffitt_ad():
         # transcript symbols and rna type 
         adata.var["GeneSymbol"] = mg_df["symbol"].to_numpy()
         adata.var["RNA_Biotype"] = mg_df["type_of_gene"].to_numpy()
+
+
+        # Calculate AUC, VUC, and VUC (log conc.)
+        file_names = []
+        for file_name in os.listdir(ex_vivo_dir):
+            file_names.append(file_name)
+
+        dfs = {}
+        not_found_files = []
+        for idx in adata.obs['ExVivo_SampleID']:
+            suffix = idx + ".csv"
+            file_name = Path(ex_vivo_dir / suffix)
+            #print(file_name)
+            #if file_name in file_names:
+            try: 
+                df = pd.read_csv(file_name).set_index('Time(h)')
+                df = df[[col for col in df.columns if col != 'Unnamed: 11']]
+                dfs[idx] = df
+            except FileNotFoundError as E:
+                not_found_files.append(idx)
+
+        files_for_missing_ids = []
+        for file_name in file_names:
+            for not_found_file in not_found_files:
+                if file_name.startswith(not_found_file):
+                    files_for_missing_ids.append(file_name)
+
+        for not_found_file in not_found_files:
+            nf_name = not_found_file + "_1.csv"
+            nf_path = Path(ex_vivo_dir / nf_name )
+            df = pd.read_csv(nf_path).set_index('Time(h)').drop('Unnamed: 11', axis=1)
+            df = df[[col for col in df.columns if col != 'Unnamed: 11']]
+            dfs[not_found_file] = df
+
+        for key in dfs:
+            dfs[key] = dfs[key].iloc[:193]
+
+        all_doses_dfs = {} # for all concentrations 
+        vucs = {}
+        vucs_log_conc = {}
+        for key in dfs:
+            df = dfs[key]
+
+
+            dose_means = df.T.groupby(df.columns.str[:3]).mean().T
+            all_doses_dfs[key] = dose_means.mean(axis=1) 
+            
+            # get vuc 
+            doses = sorted(df.T.groupby(df.columns.str[:4]).mean().T.columns.astype(float))
+            print(doses)
+
+            time_auc = np.trapezoid(
+            dose_means.to_numpy(),
+            x=np.array(df.index.astype(float)),
+            axis=0
+            )
+
+            surface_auc = np.trapezoid(
+                time_auc,
+                x=doses
+            )
+
+            surface_metric = surface_auc / (96 * (max(doses) - min(doses)))
+            vucs[key] = surface_metric
+
+            # get vuc with log dosage
+
+            time_points = np.array(df.index.astype(float))
+
+            vuc_log_conc = np.trapezoid(
+                time_auc,
+                x=np.log(doses)
+            ) / (
+                (time_points[-1] - time_points[0])
+                * (np.log(doses[-1]) - np.log(doses[0]))
+            )
+            vucs_log_conc[key] = vuc_log_conc
+
+        all_dose_auc = {}
+        for key in all_doses_dfs:
+            df = all_doses_dfs[key]
+            x = df.index.astype(float).values
+            y = df.values
+
+            all_dose_auc[key] = np.trapezoid(y=y, x=x)
+
+        all_dose_auc_df = pd.Series(all_dose_auc).loc[adata.obs['ExVivo_SampleID']] / 96
+        vucs_df = pd.Series(vucs).loc[adata.obs['ExVivo_SampleID']]
+        vucs_log_dose_df = pd.Series(vucs_log_conc).loc[adata.obs['ExVivo_SampleID']]
+
+        adata.obs['Calculated_AUC'] = all_dose_auc_df.values
+        adata.obs['Calculated_VUC'] = vucs_df.values
+        adata.obs["Calculated_VUC_Log_Conc"] = vucs_log_dose_df.values
+
     
         adata.write_h5ad(anndata_path) # save file
 
