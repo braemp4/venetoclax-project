@@ -45,6 +45,9 @@ feature_sets = {
 with open("../outputs/t11_14_degs.txt", "r") as file:
     feature_sets['t11_14_degs'] = file.read().split(',')
 
+feature_sets['t11_14_degs + Gupta_six_gene_signature'] =  list( set(feature_sets['t11_14_degs'] + feature_sets['Gupta_six_gene_signature']) )
+feature_sets['t11_14_degs + BCL2_family_ratios'] =  feature_sets['t11_14_degs'] + feature_sets['BCL2_family_ratios']
+
 for file_name in os.listdir(gmt_dir):
     if 'gmt' in file_name:
         if "ZHAN" in file_name or "TART" in file_name or "HAY" in file_name or "SHAF" in file_name or "BCL" in file_name or 'chr' in file_name: 

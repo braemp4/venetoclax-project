@@ -2,11 +2,13 @@ from pydeseq2.dds import DeseqDataSet
 from pydeseq2.default_inference import DefaultInference
 from pydeseq2.ds import DeseqStats
 from datasets.Harmonized_Datasets import harmonize
+from downstream_analysis.dge_analysis import pipeline, run_deseq
+from sklearn.preprocessing import LabelEncoder
 
 import numpy as np 
 import pandas as pd 
 
-
+'''
 def map_de_level(a):
     log2FoldChange, nlog10 = a 
 
@@ -27,7 +29,6 @@ cm_ad = cm_ad[cm_ad.obs['Trans_1114'].notna()]
 cm_ad = cm_ad[cm_ad.obs['Country_Skerget'].notna()]
 
 expr_df = pd.DataFrame(cm_ad.layers['raw_counts'], columns=np.array(cm_ad.var_names))
-
 
 
 inference = DefaultInference(n_cpus=8)
@@ -57,7 +58,11 @@ de_genes = list(sigs[sigs["de_level"] != "Low DE"].index)
 with open("../outputs/t11_14_degs.txt","w") as file:
     for gene in de_genes:
         file.write(f"{gene},")
+'''
 
+adata = harmonize()['Commpass']
+
+dge_results = run_deseq(adata, group_label='Trans_1114')
 
 
 
