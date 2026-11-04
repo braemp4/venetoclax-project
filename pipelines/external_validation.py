@@ -17,8 +17,8 @@ duplicate_test = pd.DataFrame(test_on_duplicates(model))
 print(duplicate_test[duplicate_test['duplicate_exvivo'] == True])
 
 
-duplicate_test = pd.DataFrame(test_on_duplicate_moderate_responders(model))
-print(duplicate_test[duplicate_test['duplicate_exvivo'] == True])
+#duplicate_test = pd.DataFrame(test_on_duplicate_moderate_responders(model))
+#print(duplicate_test[duplicate_test['duplicate_exvivo'] == True])
 
 
 
