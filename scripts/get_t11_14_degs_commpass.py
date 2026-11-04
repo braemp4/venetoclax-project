@@ -8,7 +8,6 @@ from sklearn.preprocessing import LabelEncoder
 import numpy as np 
 import pandas as pd 
 
-'''
 def map_de_level(a):
     log2FoldChange, nlog10 = a 
 
@@ -50,7 +49,7 @@ ds_res= ds_res.sort_values(by="padj", ascending=False)
 
 ds_res = ds_res[ds_res["baseMean"] >=10]
 
-sigs = ds_res[(ds_res["padj"] < 0.05) & (abs(ds_res["log2FoldChange"]))>0.5]
+sigs = ds_res[(ds_res["padj"] < 0.05) & (abs(ds_res["log2FoldChange"]))>0.5] # whoops ...
 sigs["nlog10"] = -np.log10(sigs.padj)
 sigs["de_level"] = sigs[["log2FoldChange", "nlog10"]].apply(map_de_level, axis=1)
 de_genes = list(sigs[sigs["de_level"] != "Low DE"].index)
@@ -58,11 +57,49 @@ de_genes = list(sigs[sigs["de_level"] != "Low DE"].index)
 with open("../outputs/t11_14_degs.txt","w") as file:
     for gene in de_genes:
         file.write(f"{gene},")
-'''
 
-adata = harmonize()['Commpass']
 
-dge_results = run_deseq(adata, group_label='Trans_1114')
+sigs = ds_res[(ds_res["padj"] < 0.05) & (abs(ds_res["log2FoldChange"]) >= 0.5)]
+sigs["nlog10"] = -np.log10(sigs.padj)
+sigs["de_level"] = sigs[["log2FoldChange", "nlog10"]].apply(map_de_level, axis=1)
+de_genes = list(sigs[sigs["de_level"] != "Low DE"].index)
+
+with open("../outputs/t11_14_degs_lfc0.5.txt","w") as file:
+    for gene in de_genes:
+        file.write(f"{gene},")
+
+sigs = ds_res[(ds_res["padj"] < 0.05) & (abs(ds_res["log2FoldChange"]) >= 1)]
+sigs["nlog10"] = -np.log10(sigs.padj)
+sigs["de_level"] = sigs[["log2FoldChange", "nlog10"]].apply(map_de_level, axis=1)
+de_genes = list(sigs[sigs["de_level"] != "Low DE"].index)
+
+with open("../outputs/t11_14_degs_lfc1.txt","w") as file:
+    for gene in de_genes:
+        file.write(f"{gene},")
+
+
+sigs = ds_res[(ds_res["padj"] < 0.05) & (abs(ds_res["log2FoldChange"]) >= 1.5)]
+sigs["nlog10"] = -np.log10(sigs.padj)
+sigs["de_level"] = sigs[["log2FoldChange", "nlog10"]].apply(map_de_level, axis=1)
+de_genes = list(sigs[sigs["de_level"] != "Low DE"].index)
+
+with open("../outputs/t11_14_degs_lfc1.5.txt","w") as file:
+    for gene in de_genes:
+        file.write(f"{gene},")
+
+
+sigs = ds_res[(ds_res["padj"] < 0.05) & (abs(ds_res["log2FoldChange"]) >= 2)]
+sigs["nlog10"] = -np.log10(sigs.padj)
+sigs["de_level"] = sigs[["log2FoldChange", "nlog10"]].apply(map_de_level, axis=1)
+de_genes = list(sigs[sigs["de_level"] != "Low DE"].index)
+
+with open("../outputs/t11_14_degs_lfc2.txt","w") as file:
+    for gene in de_genes:
+        file.write(f"{gene},")
+# do it this way but fix downstream_analysis scripts first
+#adata = harmonize()['Commpass']
+#adata = adata[adata.obs['Trans_1114'].notna()]
+#dge_results = run_deseq(adata, group_label='Trans_1114')
 
 
 

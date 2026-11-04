@@ -9,6 +9,7 @@ from sklearn.model_selection import StratifiedKFold, cross_val_score
 from sklearn.preprocessing import StandardScaler
 from sklearn.metrics import precision_score, recall_score, f1_score, roc_auc_score, accuracy_score
 from sklearn.utils import resample
+from sklearn.decomposition import PCA 
 from utils.labelling import binarize_labels
 import os
 from gseapy import read_gmt
@@ -76,6 +77,7 @@ def cross_val_classification(X,y_ad, model,n_splits=5, random_state=4, verbose=T
 
     results = {"samples": [],
                 'wes_id': [],
+               'ex_vivo_id':[],
                "y_true": [],
                "y_pred": [],
                "y_prob": [],
@@ -109,8 +111,8 @@ def cross_val_classification(X,y_ad, model,n_splits=5, random_state=4, verbose=T
 
         X_train, y_train = X.iloc[train_index], y.iloc[train_index]
         X_test, y_test = X.iloc[test_index], y.iloc[test_index]
-
-
+        
+    
         # add ground truth values
         results["y_true"] += list(y_test)
         
@@ -119,11 +121,13 @@ def cross_val_classification(X,y_ad, model,n_splits=5, random_state=4, verbose=T
         results["samples"] +=list(test_samples)
         wes_ids = y_ad.loc[test_samples]['WES_SampleID']
         results['wes_id'] += list(wes_ids)
+        results['ex_vivo_id'] += list(y_ad.loc[test_samples]['ExVivo_SampleID'])
        
         # Scale the training data
         scl = StandardScaler()
         X_train = scl.fit_transform(X_train)
         X_test = scl.transform(X_test)
+
 
         # train model
         model.fit(X_train, y_train)
@@ -179,6 +183,9 @@ ml_model = ml_models[list(ml_models.keys())[model_index]]
 feature_set = feature_sets[list(feature_sets.keys())[feature_set_index]]
 ##### UI #####
 
+mf_ad.obs['venetoclax_response'] = binarize_labels(mf_ad.obs['ABT-199'])
+mf_ad = mf_ad[mf_ad.obs['venetoclax_response'] != -1]
+
 X = mf_ad.to_df()
 
 X['BCL2/MCL1'] = X['BCL2'] / X['MCL1']
@@ -186,11 +193,7 @@ X['BCL2/MCL1'] = X['BCL2'] / X['MCL1']
 X['BCL2/BCL2L1'] = X['BCL2'] / X['BCL2L1']
 X = X[list( set(feature_set) & set(X.columns) )]
 
-'''
-Just learned something new. We get different scores looking at pooled out-of-fold metrics to average (mean or median) fold metrics. The primary metric should be the average fold predictions +/-. Later on we can try permuation testing of the labels to see if results are by chance. To do permutation test we shuffle the labels n times and the proportion of times we get greater than or equal to our metric is the P value. For CSV to save metric average +/- std, save a list with columns as metric for just one feature set.
 
-'''
-mf_ad.obs['venetoclax_response'] = binarize_labels(mf_ad.obs['ABT-199'])
 results, cv_metrics = cross_val_classification(X, mf_ad.obs, ml_model) 
 results_df = pd.DataFrame(results)
 
@@ -201,5 +204,5 @@ print(pd.Series(cv_metrics).T)
 #print("Calculating out-of-fold bootstrap metrics: ")
 #get_bootstrap_metrics(results_df, bootstraps=10000)
 
-results_df.to_csv("../outputs/predictions_for_wes_analysis.csv")
+results_df.to_csv("../outputs/best_model_cv_predictions.csv")
 

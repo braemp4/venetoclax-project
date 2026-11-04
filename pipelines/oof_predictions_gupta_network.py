@@ -7,6 +7,7 @@ from sklearn.ensemble import RandomForestClassifier, HistGradientBoostingClassif
 from sklearn.svm import LinearSVC, SVC
 from sklearn.model_selection import StratifiedKFold, cross_val_score
 from sklearn.preprocessing import StandardScaler
+from sklearn.feature_selection import SelectKBest
 from sklearn.metrics import precision_score, recall_score, f1_score, roc_auc_score, accuracy_score
 from sklearn.utils import resample
 from utils.labelling import binarize_labels
@@ -109,6 +110,8 @@ def cross_val_classification_co_expression(X,y_ad, model, feature_set,n_splits=5
 
         X_train, y_train = X.iloc[train_index], y.iloc[train_index]
         # get co-expression network
+
+
         print('Getting coexpression network ...')
         network = []
         for gene in feature_set:
@@ -120,6 +123,8 @@ def cross_val_classification_co_expression(X,y_ad, model, feature_set,n_splits=5
                     network.append(col)
         
         network = list(set(network))
+
+
         print('Coexpression network obtained! ')
         X_train = X_train[network]
 

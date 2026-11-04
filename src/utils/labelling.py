@@ -3,7 +3,7 @@ import pandas as pd
 from sklearn.preprocessing import StandardScaler
 from sklearn.mixture import GaussianMixture
 
-def binarize_labels(y, method="gmm", random_state=4):
+def binarize_labels(y, method="tertiles", random_state=4):
     '''
     this can be its own util
     '''

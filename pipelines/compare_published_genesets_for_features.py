@@ -19,7 +19,8 @@ gmt_dir = '../data/GMT/'
 random_state=4
 
 ml_models = {'RidgeClassifier': RidgeClassifier(random_state=random_state),
-             'LogisticRegression': LogisticRegression(random_state=random_state),
+             'LogisticRegression': LogisticRegression(random_state=random_state, C=np.float64(0.01), l1_ratio=0, max_iter=10000),
+             #'LogisticRegression': LogisticRegression(random_state=4),
              'SGDClassifier': SGDClassifier(random_state=random_state),
              'GaussianNB': GaussianNB(),
              'RandomForestClassifier': RandomForestClassifier(random_state=random_state),
@@ -40,10 +41,28 @@ feature_sets = {
 
         # novel data-driven (i.e. t11;14 degs from commpass)
         't11_14_degs': [],
+
+        't11_14_degs_lfc0.5':[],
+        't11_14_degs_lfc1':[],
+        't11_14_degs_lfc1.5':[],
+        't11_14_degs_lfc2':[],
         }
 
 with open("../outputs/t11_14_degs.txt", "r") as file:
     feature_sets['t11_14_degs'] = file.read().split(',')
+
+with open("../outputs/t11_14_degs_lfc0.5.txt", "r") as file:
+    feature_sets['t11_14_degs_lfc0.5'] = file.read().split(',')
+
+with open("../outputs/t11_14_degs_lfc1.txt", "r") as file:
+    feature_sets['t11_14_degs_lfc1'] = file.read().split(',')
+
+with open("../outputs/t11_14_degs_lfc1.5.txt", "r") as file:
+    feature_sets['t11_14_degs_lfc1.5'] = file.read().split(',')
+
+
+with open("../outputs/t11_14_degs_lfc2.txt", "r") as file:
+    feature_sets['t11_14_degs_lfc2'] = file.read().split(',')
 
 feature_sets['t11_14_degs + Gupta_six_gene_signature'] =  list( set(feature_sets['t11_14_degs'] + feature_sets['Gupta_six_gene_signature']) )
 feature_sets['t11_14_degs + BCL2_family_ratios'] =  feature_sets['t11_14_degs'] + feature_sets['BCL2_family_ratios']
@@ -58,6 +77,10 @@ for file_name in os.listdir(gmt_dir):
 def main():
 
     mf_ad = harmonize()['Moffitt']
+
+    # removed because it dosn't improve models performance
+    #mf_ad = mf_ad[(mf_ad.obs['Disease_Status'] !=  'SMOL') & (mf_ad.obs['Disease_Status'] != "MGUS")]
+
     feature_sets['all'] = list(mf_ad.var_names)
     mf_ad.obs['venetoclax_response'] = binarize_labels(mf_ad.obs['ABT-199'])
     mf_ad = mf_ad[mf_ad.obs['venetoclax_response'] != -1 ]

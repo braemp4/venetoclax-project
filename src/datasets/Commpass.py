@@ -29,6 +29,7 @@ def load_commpass_ad():
         # very important change for dge analysis with commpass dataset
         raw_expr_df = pd.read_csv(commpass_path / "1stLine_Raw_ENSG.csv").set_index("Unnamed: 0").T # this should NOT be batch corrected before running pydeseq2
         #.set_index("gene_name")
+        print(raw_expr_df)
         metadata = pd.read_csv(commpass_path/ "patient_clinical_data.csv", sep="\t").set_index("PUBLIC_ID")
         
 #        print(expr_df, raw_expr_df)
