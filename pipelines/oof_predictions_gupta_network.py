@@ -16,6 +16,7 @@ from gseapy import read_gmt
 from scipy.special import expit
 from scipy.stats import spearmanr
 import matplotlib.pyplot as plt 
+import seaborn as sns 
 from compare_published_genesets_for_features import * 
 
 def get_bootstrap_metrics(results_df, alpha=0.05, bootstraps=10000, verbose=True):
@@ -179,7 +180,15 @@ def cross_val_classification_co_expression(X,y_ad, model, feature_set,n_splits=5
     plt.xlabel('Score')
     plt.title("Top model + feature-set combination")
     plt.tight_layout()
-    plt.savefig('results_from_gupta_coexpression.png')
+    plt.savefig('results_from_gupta_model.png')
+
+#    plt.clf()
+    # bar plot
+
+#    sns.barplot(fold_metrics)
+#    plt.yticks( [0, 0.1 ,0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0] )
+#    plt.title("Top model metrics")
+#    plt.savefig('barplot_top_model_metrics.png')
 
     return results, cv_metrics
 

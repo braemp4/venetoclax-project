@@ -16,6 +16,7 @@ from gseapy import read_gmt
 from scipy.special import expit
 
 import matplotlib.pyplot as plt 
+import seaborn as sns
 from compare_published_genesets_for_features import * 
 
 def get_bootstrap_metrics(results_df, alpha=0.05, bootstraps=10000, verbose=True):
@@ -162,6 +163,16 @@ def cross_val_classification(X,y_ad, model,n_splits=5, random_state=4, verbose=T
     plt.title("Top model + feature-set combination")
     plt.tight_layout()
     plt.savefig('top-model-feature-set-combination.png')
+
+
+    plt.clf()
+    # bar plot
+    fig, ax = plt.subplots(1, figsize=(8, 5))
+    sns.barplot(fold_metrics, errorbar=None, lw=2, edgecolor='k', ax=ax )
+    plt.yticks( [0, 0.1 ,0.2, 0.3, 0.4, 0.5, 0.6, 0.7, 0.8, 0.9, 1.0] )
+    plt.title("Top model metrics")
+    plt.savefig('barplot_top_model_metrics.png')
+
 
     return results, cv_metrics
 
